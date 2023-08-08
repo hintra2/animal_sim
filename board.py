@@ -1,13 +1,7 @@
 from random import randint
 import pygame
 
-class Square(pygame.Rect):
-    def __init__(self, id:int, value:int, left, top, width, height):
-        pygame.Rect.__init__(self, left, top, width, height)
-        self.id = 1 if id == 100 else 0
-        self.value=value
-    id:int
-    value:int
+from square import Square
 
 class Board():
     screen_width=1500
@@ -22,7 +16,10 @@ class Board():
 
     object_board: list[list[Square]]
     object_board_width=500
-    object_board_height=500
+    object_board_height=100
+
+    def get_square(self, x, y) -> Square:
+        return self.object_board[x][y]
 
     def get_color(self, id:int):
         if id == 0:
@@ -30,36 +27,35 @@ class Board():
         else:
             return "#5b85d4"
 
-    def plot_square(self, square:pygame.Rect):
-        pygame.draw.rect(surface=self.display, color=self.get_color(square.id), rect=square)
-        pygame.display.flip()
-
     def plot_board(self):
-        for row in range(0, self.columns):
-            for column in range(0, self.rows):
-                rect = pygame.Rect(0+self.square_size*row, 0+self.square_size*column, self.square_size, self.square_size)
-                pygame.draw.rect(surface=self.display, color=self.get_color(self.object_board[self.current_x_pos+row][self.current_y_pos+column].id), rect=rect)
+        for column in range(0, self.columns):
+            for row in range(0, self.rows):
+                square = self.get_square(self.current_x_pos+column, self.current_y_pos+row)
+                color = self.get_color(square.id)
+                if square.get_animals():
+                    color = square.get_animals().get_color()
+
+                rect = pygame.Rect(0+self.square_size*column, 0+self.square_size*row, self.square_size, self.square_size)
+                pygame.draw.rect(surface=self.display, color=color, rect=rect)
         pygame.display.flip()
 
     def move(self, x:int, y:int):
-        if not self.current_x_pos + x == -1 and not self.current_x_pos + x + self.columns + 1 == self.object_board_width:
+        if not self.current_x_pos + x == -1 and x != 0 and not self.current_x_pos + x + self.columns + 2 >= self.object_board_width:
             self.current_x_pos += x
-        if not self.current_y_pos + y == -1 and not self.current_y_pos + y + self.rows + 1 == self.object_board_height:
+        if not self.current_y_pos + y == -1 and y != 0 and not self.current_y_pos + y + self.rows + 2 >= self.object_board_height:
             self.current_y_pos += y
-        self.plot_board()
 
     def __init__(self):
         #generate initial board
-        self.object_board=[[Square(id=randint(0,101), value=0, left=row*self.square_size, top=column*self.square_size, width=self.square_size, height=self.square_size) for column in range(0, self.object_board_width)] for row in range(0, self.object_board_height)]
+        self.object_board=[[Square(id=randint(0,101), value=0) for row in range(0, self.object_board_height)] for column in range(0, self.object_board_width)]
         #generate water
-        for row in range(0, self.object_board_width):
-            for column in range(0, self.object_board_height):
-                if self.object_board[row][column].id == 1:
-                    self.spread_water(row, column, 0)
+        for column in range(0, self.object_board_width):
+            for row in range(0, self.object_board_height):
+                if self.object_board[column][row].id == 1:
+                    self.spread_water(column, row, 0)
 
         pygame.init()
         self.display = pygame.display.set_mode((self.screen_width,self.screen_height))
-        self.plot_board()
 
     def spread_water(self, x_pos:int, y_pos:int, water_rate:int):
         if randint(0, water_rate) == 0:

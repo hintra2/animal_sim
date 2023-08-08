@@ -1,10 +1,12 @@
 import abc
 import typing
 
-from pygame import Color
 import pygame
+from pygame import Color
 
-from board import Board, Square
+from board import Board
+from square import Square
+
 
 class Animal():
 
@@ -23,23 +25,23 @@ class Animal():
     current_rest:int
 
     vision:typing.List[typing.List[int]]
-    position:typing.List[int]
+    x:int
+    y:int
     color:Color
     id:int
 
-    board:Board
+    def get_color(self):
+        return self.color
 
-    def move(self, x:int = 0, y:int = 0):
-        #when moving decrease food_score and thirst_score and rest_score.
-        #Decrease exponentially in when you run. Windup?
-        self.board.plot_square(self.board.object_board[self.position[0]][self.position[1]])
-        self.position[0] += x
-        self.position[1] += y
-        self.current_hunger -= 2
-        self.current_thirst -= 2
-        self.current_rest -= 2
-        print("moving to x:" + str(self.position[0]) + "y: " + str(self.position[1]))
-        self.draw()
+    def move(self, board:Board, x:int = 0, y:int = 0):
+        last_square=board.get_square(self.x,self.y)
+        last_square.remove_animal_from_square(self)
+        self.x += x
+        self.y += y
+        last_square=board.get_square(self.x,self.y)
+        last_square.add_animal_to_square(self)
+
+        print("moving to x:" + str(self.x) + "y: " + str(self.y))
 
     def eat(self, food_id:int):
         #If value you are standing on is the value of things you eat, eat.
@@ -91,25 +93,14 @@ class Animal():
         if self.current_rest == 0:
             self.sleep
 
-    def draw(self):
-        #print("Draw rabbit")
-        x_pos = self.position[0] - self.board.current_x_pos
-        y_pos = self.position[1] - self.board.current_y_pos
-        if y_pos < 0 or x_pos < 0:
-            return
-        pygame.draw.rect(surface=self.board.display, color=self.color, rect=pygame.Rect(0+self.board.square_size*x_pos, 0+self.board.square_size*y_pos, self.board.square_size, self.board.square_size))
-        pygame.display.flip()
-
-
 class Rabbit(Animal):
-    def __init__(self, board:Board):
+    def __init__(self):
         self.speed = 1
         self.sight = 5
         self.food=[0]
         self.hunger_score = self.current_hunger = 100
         self.thirst_score = self.current_thirst = 50
         self.rest_score = self.current_rest = 300
-        self.position=[5,5]
+        self.x=5
+        self.y=5
         self.color = Color("#8a6e4b")
-        self.board = board
-        self.draw()
